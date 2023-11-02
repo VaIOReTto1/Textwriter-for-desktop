@@ -25,10 +25,10 @@ fun TextWriterUi() {
     Column {
         TopAppBar(
             contentColor = Color.White,
-            title = { Text("SimpleMDIExample") },
+            title = { Text("文本编辑器") },
             actions = {
                 TextButton(onClick = {
-                    currentDocument = Document("Untitled", "")
+                    currentDocument = Document("未命名", "")
                     documents.add(currentDocument!!)
                 }) {
                     Text("New", color = Color.White)
@@ -45,7 +45,7 @@ fun TextWriterUi() {
                         documents.add(currentDocument!!)
                     }
                 }) {
-                    Text("Open", color = Color.White)
+                    Text("打开", color = Color.White)
                 }
 
                 TextButton(onClick = {
@@ -58,7 +58,7 @@ fun TextWriterUi() {
                         }
                     }
                 }) {
-                    Text("Save", color = Color.White)
+                    Text("保存", color = Color.White)
                 }
 
                 TextButton(onClick = {
@@ -66,7 +66,7 @@ fun TextWriterUi() {
                         it.isBold = !it.isBold
                     }
                 }) {
-                    Text("Bold", color = Color.White)
+                    Text("黑体", color = Color.White)
                 }
 
                 TextButton(onClick = {
@@ -74,13 +74,13 @@ fun TextWriterUi() {
                         it.isItalic = !it.isItalic
                     }
                 }) {
-                    Text("Italic", color = Color.White)
+                    Text("斜体", color = Color.White)
                 }
             }
         )
 
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width(200.dp)) {
+            Column(Modifier.width(200.dp).fillMaxHeight().background(Color.Gray)) {
                 documents.forEach { doc ->
                     TextButton(onClick = { currentDocument = doc }) {
                         Text(doc.name)
@@ -88,14 +88,16 @@ fun TextWriterUi() {
                 }
             }
 
-            Box(Modifier.fillMaxSize().background(Color.Gray)) {
+            Box(Modifier.fillMaxSize()) {
                 currentDocument?.let { doc ->
+                    val text= remember { mutableStateOf(doc.content) }
                     BasicTextField(
-                        value = doc.content,
+                        value = text.value,
                         onValueChange = {
-                            doc.content = it
+                            text.value = it
                         },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .padding(8.dp),
                         textStyle = TextStyle(
                             color = Color.Black,
                             fontSize = 20.sp,

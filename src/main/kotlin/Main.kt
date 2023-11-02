@@ -17,7 +17,7 @@ fun App() {
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Multi-Document Text Editor",
+        title = "TextWriter",
         state = rememberWindowState(height = 800.dp, width = 600.dp)
     ) {
         App()
