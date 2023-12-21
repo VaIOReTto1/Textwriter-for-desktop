@@ -32,7 +32,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "TextWriter",
-        state = rememberWindowState(height = 506.dp, width = 960.dp)
+        state = rememberWindowState(height = 675.dp, width = 1200.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color(Black_color))

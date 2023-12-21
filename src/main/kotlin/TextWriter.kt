@@ -43,7 +43,7 @@ data class Document(
 )
 
 val Black_color = 0xff2d343c
-val fontSizes = listOf(8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30)
+val fontSizes = listOf(8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30) // 字体大小
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -51,12 +51,12 @@ fun TextWriterUi() {
     var documents by remember { mutableStateOf(listOf<Document>()) } // 文档列表
     var currentDocumentIndex by remember { mutableStateOf(-1) } //当前文档索引
 
-    val defaultTextStyle = MaterialTheme.typography.body1
-    var textStyle by remember { mutableStateOf(defaultTextStyle) }
+    val defaultTextStyle = MaterialTheme.typography.body1 // 默认字体样式
+    var textStyle by remember { mutableStateOf(defaultTextStyle) } // 字体样式
 
-    var selectedFontSize by remember { mutableStateOf(12) }
+    var selectedFontSize by remember { mutableStateOf(18) } // 字体大小
 
-    textStyle = textStyle.copy(fontSize = selectedFontSize.sp)
+    textStyle = textStyle.copy(fontSize = selectedFontSize.sp) // 字体大小
 
     var showCloseConfirmationDialog by remember { mutableStateOf(false) } // 显示关闭确认对话框
     var closingDocumentIndex by remember { mutableStateOf(-1) } // 关闭文档索引
@@ -66,6 +66,7 @@ fun TextWriterUi() {
         fileFilter = FileNameExtensionFilter("Text Files", "txt")
     }
 
+    // 关闭文档
     fun closeTab(index: Int) {
         showCloseConfirmationDialog = true
         closingDocumentIndex = index
@@ -111,6 +112,7 @@ fun TextWriterUi() {
                     dismissButton = {
                         Button(
                             onClick = {
+                                // 从列表中移除并关闭对话框
                                 documents = documents.filterIndexed { i, _ -> i != closingDocumentIndex }
                                 if (closingDocumentIndex <= currentDocumentIndex) {
                                     currentDocumentIndex = maxOf(0, currentDocumentIndex - 1)
@@ -135,6 +137,7 @@ fun TextWriterUi() {
 
             // 文档操作工具栏
             DocumentOperationsToolbar(
+                //新建文档
                 onNew = {
                     val newDocument = Document(null, TextFieldValue())
                     documents = documents + newDocument
@@ -157,6 +160,7 @@ fun TextWriterUi() {
                     currentDocumentIndex.takeIf { it >= 0 }?.let { index ->
                         val currentDocument = documents[index]
                         currentDocument.file?.writeText(currentDocument.content.text) ?: run {
+                            // 保存到文件
                             if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                                 val newFile = fileChooser.selectedFile
                                 newFile.writeText(currentDocument.content.text)
@@ -191,10 +195,10 @@ fun TextWriterUi() {
                 onTextStyleChange = { newStyle -> textStyle = newStyle }, //更改文本样式
                 textStyle = textStyle, //当前文本样式
 
+                //更改字体大小
                 onFontSizeChange = { newSize ->
                     selectedFontSize = newSize
                 },
-                currentFontSize = selectedFontSize
             )
 
             // 文档选项卡
@@ -220,6 +224,7 @@ fun TextWriterUi() {
     }
 }
 
+// 文本按钮
 @Composable
 fun CustomTextButton(
     text: String,
@@ -240,6 +245,7 @@ fun CustomTextButton(
             contentColor = textColor
         ),
         modifier = Modifier.background(
+            // 背景渐变
             brush = rememberUpdatedState(
                 Brush.verticalGradient(
                     listOf(
@@ -277,6 +283,7 @@ fun DocumentTabs(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            // 文件名字
                             Text(
                                 document.file?.name ?: "未命名",
                                 overflow = TextOverflow.Ellipsis,
@@ -323,7 +330,6 @@ fun DocumentOperationsToolbar(
     onTextStyleChange: (TextStyle) -> Unit,
     textStyle: TextStyle,
     onFontSizeChange: (Int) -> Unit,
-    currentFontSize: Int
 ) {
     val _isBold = remember { mutableStateOf(false) }
     val _isItalic = remember { mutableStateOf(false) }
@@ -369,9 +375,9 @@ fun DocumentOperationsToolbar(
                         .background(Color(Black_color), CircleShape)
                 )
 
-                CustomTextButton("NEW FILE", onNew)
-                CustomTextButton("OPEN FILE", onOpen)
-                CustomTextButton("SAVE", onSave)
+                CustomTextButton("NEW FILE", onNew) // 新建按钮
+                CustomTextButton("OPEN FILE", onOpen) // 打开按钮
+                CustomTextButton("SAVE", onSave) // 保存按钮
 
                 // 右侧黑点
                 Box(
@@ -398,25 +404,26 @@ fun DocumentOperationsToolbar(
                         .background(Color(Black_color), CircleShape)
                 )
 
-                CustomTextButton("COPY", onCopy)
-                CustomTextButton("PASTE", onPaste)
+                CustomTextButton("COPY", onCopy) // 复制按钮
+                CustomTextButton("PASTE", onPaste) // 粘贴按钮
                 CustomTextButton("BOLD", {
                     _isBold.value = !_isBold.value
                     onTextStyleChange(textStyle.copy(fontWeight = if (_isBold.value) FontWeight.Bold else FontWeight.Normal))
-                })
+                }) // 加粗按钮
                 CustomTextButton(
                     "ITALIC",
                     {
                         _isItalic.value = !_isItalic.value
                         onTextStyleChange(textStyle.copy(fontStyle = if (_isItalic.value) FontStyle.Italic else FontStyle.Normal))
                     },
-                )
+                ) // 斜体按钮
 
-                var expanded by remember { mutableStateOf(false) }
+                var expanded by remember { mutableStateOf(false) } // 字体大小下拉菜单是否展开
 
                 Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                    CustomTextButton("FontSize", { expanded = true })
+                    CustomTextButton("FONTSIZE", { expanded = true })
 
+                    // 字体大小下拉菜单
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
@@ -424,6 +431,7 @@ fun DocumentOperationsToolbar(
                             .height(200.dp).width(80.dp)
                             .align(Alignment.TopEnd)
                     ) {
+                        // 循环遍历字体大小列表
                         fontSizes.forEach { size ->
                             DropdownMenuItem(onClick = {
                                 onFontSizeChange(size)
