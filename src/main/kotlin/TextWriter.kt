@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -42,6 +43,7 @@ data class Document(
 )
 
 val Black_color = 0xff2d343c
+val fontSizes = listOf(8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30)
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -51,6 +53,10 @@ fun TextWriterUi() {
 
     val defaultTextStyle = MaterialTheme.typography.body1
     var textStyle by remember { mutableStateOf(defaultTextStyle) }
+
+    var selectedFontSize by remember { mutableStateOf(12) }
+
+    textStyle = textStyle.copy(fontSize = selectedFontSize.sp)
 
     var showCloseConfirmationDialog by remember { mutableStateOf(false) } // 显示关闭确认对话框
     var closingDocumentIndex by remember { mutableStateOf(-1) } // 关闭文档索引
@@ -184,6 +190,11 @@ fun TextWriterUi() {
 
                 onTextStyleChange = { newStyle -> textStyle = newStyle }, //更改文本样式
                 textStyle = textStyle, //当前文本样式
+
+                onFontSizeChange = { newSize ->
+                    selectedFontSize = newSize
+                },
+                currentFontSize = selectedFontSize
             )
 
             // 文档选项卡
@@ -311,6 +322,8 @@ fun DocumentOperationsToolbar(
     onPaste: () -> Unit,
     onTextStyleChange: (TextStyle) -> Unit,
     textStyle: TextStyle,
+    onFontSizeChange: (Int) -> Unit,
+    currentFontSize: Int
 ) {
     val _isBold = remember { mutableStateOf(false) }
     val _isItalic = remember { mutableStateOf(false) }
@@ -398,6 +411,29 @@ fun DocumentOperationsToolbar(
                         onTextStyleChange(textStyle.copy(fontStyle = if (_isItalic.value) FontStyle.Italic else FontStyle.Normal))
                     },
                 )
+
+                var expanded by remember { mutableStateOf(false) }
+
+                Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                    CustomTextButton("FontSize", { expanded = true })
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier
+                            .height(200.dp).width(80.dp)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        fontSizes.forEach { size ->
+                            DropdownMenuItem(onClick = {
+                                onFontSizeChange(size)
+                                expanded = false
+                            }) {
+                                Text("$size")
+                            }
+                        }
+                    }
+                }
 
                 // 右侧黑点
                 Box(
