@@ -1,6 +1,10 @@
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
@@ -9,6 +13,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.text.TextStyle
@@ -30,6 +40,8 @@ data class Document(
     val file: File?,
     var content: TextFieldValue
 )
+
+val Black_color = 0xff2d343c
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -59,6 +71,8 @@ fun TextWriterUi() {
             // 显示关闭确认对话框
             if (showCloseConfirmationDialog) {
                 AlertDialog(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8)),
                     onDismissRequest = { showCloseConfirmationDialog = false },
                     title = { Text("关闭文档") },
                     text = { Text("是否保存对文档的更改？") },
@@ -74,7 +88,18 @@ fun TextWriterUi() {
                                     currentDocumentIndex = maxOf(0, currentDocumentIndex - 1)
                                 }
                                 showCloseConfirmationDialog = false
-                            }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xffe6ecf5)
+                            ),
+                            modifier = Modifier
+                                .shadow(
+                                    elevation = 15.dp,
+                                    shape = RoundedCornerShape(8.dp),
+                                    spotColor = Color(0xffc0c3d0)
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = ButtonDefaults.elevation(defaultElevation = 3.dp, pressedElevation = 6.dp)
                         ) { Text("保存") }
                     },
                     dismissButton = {
@@ -85,16 +110,22 @@ fun TextWriterUi() {
                                     currentDocumentIndex = maxOf(0, currentDocumentIndex - 1)
                                 }
                                 showCloseConfirmationDialog = false
-                            }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xffe6ecf5)
+                            ),
+                            modifier = Modifier
+                                .shadow(
+                                    elevation = 15.dp,
+                                    shape = RoundedCornerShape(8.dp),
+                                    spotColor = Color(0xffc0c3d0)
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = ButtonDefaults.elevation(defaultElevation = 3.dp, pressedElevation = 6.dp)
                         ) { Text("不保存") }
                     }
                 )
             }
-
-            // 文档选项卡
-            DocumentTabs(documents, currentDocumentIndex, onTabSelected = { index ->
-                currentDocumentIndex = index
-            }, onCloseTab = ::closeTab)
 
             // 文档操作工具栏
             DocumentOperationsToolbar(
@@ -155,6 +186,11 @@ fun TextWriterUi() {
                 textStyle = textStyle, //当前文本样式
             )
 
+            // 文档选项卡
+            DocumentTabs(documents, currentDocumentIndex, onTabSelected = { index ->
+                currentDocumentIndex = index
+            }, onCloseTab = ::closeTab)
+
             if (currentDocumentIndex in documents.indices) {
                 //显示文本
                 val currentDocument = documents[currentDocumentIndex]
@@ -173,6 +209,40 @@ fun TextWriterUi() {
     }
 }
 
+@Composable
+fun CustomTextButton(
+    text: String,
+    onClick: () -> Unit,
+    textColor: Color = Color(Black_color),
+    backgroundColor: Color = Transparent,
+    clickedColor: Color = Color(0xffeaebec)// 点击时的颜色
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    TextButton(
+        onClick = onClick,
+        // 使用interactionSource来追踪按钮的交互状态
+        interactionSource = interactionSource,
+        // 定制按钮颜色
+        colors = ButtonDefaults.textButtonColors(
+            backgroundColor = backgroundColor,
+            contentColor = textColor
+        ),
+        modifier = Modifier.background(
+            brush = rememberUpdatedState(
+                Brush.verticalGradient(
+                    listOf(
+                        if (interactionSource.collectIsPressedAsState().value) clickedColor else backgroundColor,
+                        backgroundColor
+                    )
+                )
+            ).value
+        )
+    ) {
+        Text(text = text, color = textColor)
+    }
+}
+
 // 文档选项卡
 @Composable
 fun DocumentTabs(
@@ -185,7 +255,8 @@ fun DocumentTabs(
         TabRow(
             selectedTabIndex = currentDocumentIndex,
             backgroundColor = Transparent,
-            modifier = Modifier.width(120 * documents.size.dp).height(45.dp).padding(4.dp)
+            modifier = Modifier.width(120 * documents.size.dp).height(45.dp).padding(4.dp),
+            indicator = {}
         ) {
             documents.forEachIndexed { index, document ->
                 Tab(
@@ -208,8 +279,8 @@ fun DocumentTabs(
                         }
                     },
                     modifier = Modifier.padding(2.dp)
-                        .border(color = Color.Gray, shape = RoundedCornerShape(4.dp), width = 1.dp)
-                        .background(Color.White)
+                        .border(color = Color.Gray, shape = RoundedCornerShape(2.dp), width = 1.dp)
+                        .background(Color(0xffeaebec))
                 )
             }
         }
@@ -241,40 +312,100 @@ fun DocumentOperationsToolbar(
     onTextStyleChange: (TextStyle) -> Unit,
     textStyle: TextStyle,
 ) {
+    val _isBold = remember { mutableStateOf(false) }
+    val _isItalic = remember { mutableStateOf(false) }
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(2.dp)) {
+        val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+        val shadowColor = Color.Gray
+        val shadowAlpha = 0.1f // 减少阴影的透明度以适应工具栏
+        val cornerRadius = CornerRadius(if (width < height) width / 2 else height / 2) // 设置圆角半径
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Button(onClick = onNew, colors = ButtonDefaults.buttonColors(Color(0xff708090))) {
-            Text("新建")
+        Canvas(modifier = Modifier.matchParentSize()) {
+            // 绘制底部阴影
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Transparent, shadowColor.copy(alpha = shadowAlpha)),
+                    startY = height - 10f,
+                    endY = height
+                ),
+                size = Size(width, 10f),
+                topLeft = Offset(0f, height - 10f),
+                cornerRadius = cornerRadius
+            )
         }
-
-        Button(onClick = onOpen, colors = ButtonDefaults.buttonColors(Color(0xff708090))) {
-            Text("打开")
-        }
-
-        Button(onClick = onSave, colors = ButtonDefaults.buttonColors(Color(0xff708090))) {
-            Text("保存")
-        }
-
-        Button(onClick = onCopy, colors = ButtonDefaults.buttonColors(Color(0xff708090))) {
-            Text("复制")
-        }
-
-        Button(onClick = onPaste, colors = ButtonDefaults.buttonColors(Color(0xff708090))) {
-            Text("粘贴")
-        }
-
-        Button(
-            onClick = { onTextStyleChange(textStyle.copy(fontWeight = FontWeight.Bold)) },
-            colors = ButtonDefaults.buttonColors(Color(0xff708090))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(2.dp), // 为整个工具栏设置外边距
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween // 在主轴方向上分配空间
         ) {
-            Text("黑体")
-        }
+            // 第一个带圆角边框的Row
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, Color(Black_color), RoundedCornerShape(50.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly // 按钮均匀分布
+            ) {
+                // 左侧黑点
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(Color(Black_color), CircleShape)
+                )
 
-        Button(
-            onClick = { onTextStyleChange(textStyle.copy(fontStyle = FontStyle.Italic)) },
-            colors = ButtonDefaults.buttonColors(Color(0xff708090))
-        ) {
-            Text("斜体")
+                CustomTextButton("NEW FILE", onNew)
+                CustomTextButton("OPEN FILE", onOpen)
+                CustomTextButton("SAVE", onSave)
+
+                // 右侧黑点
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(Color(Black_color), CircleShape)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // 第二个带圆角边框的Row
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, Color(Black_color), RoundedCornerShape(50.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly // 按钮均匀分布
+            ) {
+                // 左侧黑点
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(Color(Black_color), CircleShape)
+                )
+
+                CustomTextButton("COPY", onCopy)
+                CustomTextButton("PASTE", onPaste)
+                CustomTextButton("BOLD", {
+                    _isBold.value = !_isBold.value
+                    onTextStyleChange(textStyle.copy(fontWeight = if (_isBold.value) FontWeight.Bold else FontWeight.Normal))
+                })
+                CustomTextButton(
+                    "ITALIC",
+                    {
+                        _isItalic.value = !_isItalic.value
+                        onTextStyleChange(textStyle.copy(fontStyle = if (_isItalic.value) FontStyle.Italic else FontStyle.Normal))
+                    },
+                )
+
+                // 右侧黑点
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(Color(Black_color), CircleShape)
+                )
+            }
         }
     }
 }
